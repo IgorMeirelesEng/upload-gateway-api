@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models.upload import Upload, DataType
 from app.schemas.upload import UploadCreate
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 def create_upload_log(db: Session, upload: UploadCreate):
     
@@ -31,7 +31,7 @@ def get_uploads_filtered(
     data_type: Optional[DataType] = None, 
     start_date: Optional[datetime] = None, 
     end_date: Optional[datetime] = None
-):
+) -> List[Upload]:
     query = db.query(Upload)
 
     if user_id:

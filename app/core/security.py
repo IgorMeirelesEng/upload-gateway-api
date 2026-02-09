@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from typing import Union, Any
+from typing import Union, Any, Optional
 from jose import jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Security
@@ -17,13 +17,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
+# --- CORREÇÃO: Adicionado o parâmetro 'role' ---
+def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None, role: str = None) -> str:
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode = {"exp": expire, "sub": str(subject)}
+    
+    # Se passar a role, adiciona no payload do token
+    if role:
+        to_encode["role"] = role
+        
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
@@ -38,12 +44,17 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
     )
 
 def verify_ssh_key_permissions():
+    """
+    Verifica se a chave SSH existe e é legível.
+    Nota: No Docker/Linux, permissões muito abertas (777) podem fazer o SFTP falhar.
+    """
     key_path = settings.SFTP_KEY_PATH
     if not os.path.isfile(key_path):
-        print(f"ERRO! Chave SSH não encontrada: {key_path}")
+        print(f"ERRO CRÍTICO! Chave SSH não encontrada no caminho: {key_path}")
         return False
     
     if not os.access(key_path, os.R_OK):
-        print(f"ERRO! Chave SSH não tem permissão de leitura: {key_path}")
+        print(f"ERRO CRÍTICO! Sem permissão de leitura na chave SSH: {key_path}")
         return False
+        
     return True

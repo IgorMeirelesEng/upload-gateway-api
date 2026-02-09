@@ -9,7 +9,6 @@ from app.core.database import get_db
 from app.models.user import User, UserRole
 from app.crud import user as crud_user
 
-# Define onde o FastAPI deve procurar o token (na rota /login)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/access-token")
 
 def get_current_user(

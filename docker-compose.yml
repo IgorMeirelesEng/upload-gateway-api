@@ -12,7 +12,8 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h localhost -p 5432"]
+      # Hardcoded 'postgres' aqui para evitar erros de variável se o .env não carregar antes do YAML
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,10 +30,19 @@ services:
     env_file:
       - .env
     volumes:
+      # Monta o diretório atual (.) para /app dentro do container
       - .:/app
-      - ./home/ecg-upload-service/.ssh/id_rsa_api:/app/keys/id_rsa_api:ro
       
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      # --- CORREÇÃO DE CAMINHO DA CHAVE ---
+      # Opção A: Se a chave estiver dentro do projeto na pasta 'keys' (Recomendado)
+      - ./keys/id_rsa_api:/app/keys/id_rsa_api:ro
+      
+      # Opção B: Se quiser usar o caminho absoluto do servidor (cuidado com permissões)
+      # - /home/ecg-upload-service/.ssh/id_rsa_api:/app/keys/id_rsa:ro
+      
+    # --- CORREÇÃO DO COMANDO ---
+    # Mudamos de 'main:app' para 'app.main:app' pois seu código está na pasta app/
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   postgres_data:
